@@ -1,0 +1,50 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        # Route for /login to the authService /login endpoint
+        - id: login_route
+          uri: lb://auth-service  # Using load balancing with Eureka
+          predicates:
+            - Path=/login  # Match requests that come to /login
+          filters:
+            - RewritePath=/login, /login  # Forward to /login endpoint of auth-service
+            - AddRequestHeader=X-Requested-With, XMLHttpRequest  # Optional headers for requests
+
+        # Route for /validate to the authService /validate endpoint with JWT token
+        - id: validate_route
+          uri: lb://auth-service  # Using load balancing with Eureka
+          predicates:
+            - Path=/validate  # Match requests that come to /validate
+          filters:
+            - RewritePath=/validate, /validate  # Forward to /validate endpoint of auth-service
+            - AddRequestHeader=X-Requested-With, XMLHttpRequest  # Optional headers for requests
+            - AddRequestHeader=Authorization, "Bearer #{T(org.springframework.security.jwt.JwtHelper).encode('jwt-token')}"  # Set the Authorization header with JWT token
+            - AddRequestHeader=AppID, "your-app-id"  # App ID header
+            - AddRequestHeader=AppKey, "your-app-key"  # App Key header
+            - AddRequestHeader=Original-Request-Path, "#{request.getRequestURI()}"  # Save the original request path in a header
+
+        # Catch-all route to handle other paths, routing to /validate with JWT token
+        - id: default_route
+          uri: lb://auth-service
+          predicates:
+            - Path=/**  # Match any path except the ones already specified
+          filters:
+            - RewritePath=/**, /validate  # Redirect to /validate for any other request
+            - AddRequestHeader=Authorization, "Bearer #{T(org.springframework.security.jwt.JwtHelper).encode('jwt-token')}"  # JWT Token in Authorization Header
+            - AddRequestHeader=AppID, "your-app-id"
+            - AddRequestHeader=AppKey, "your-app-key"
+            - AddRequestHeader=Original-Request-Path, "#{request.getRequestURI()}"  # Save the original request path
+
+        # After successful validation, redirect to the original request path
+        - id: redirect_after_validation
+          uri: lb://auth-service
+          predicates:
+            - Path=/validate  # This is the validation route
+          filters:
+            - name: AddResponseHeader
+              args:
+                X-Original-Request-Path: "#{request.headers['Original-Request-Path']}"  # Add original path from header
+            - name: RedirectTo
+              args:
+                url: "#{request.headers['X-Original-Request-Path']}"  # Redirect to original path after validation success

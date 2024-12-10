@@ -1,0 +1,23 @@
+server:
+  port: 8761  # Eureka Server port
+
+spring:
+  application:
+    name: eureka-server
+  cloud:
+    discovery:
+      enabled: true
+  eureka:
+    client:
+      registerWithEureka: false # This instance won't register itself
+      fetchRegistry: false # This instance won't fetch the registry
+    server:
+      enableSelfPreservation: false # Turn off self-preservation mode for easier testing
+      eviction-interval-timer-in-ms: 30000  # Time interval to evict stale entries
+    instance:
+      lease-expiration-duration-in-seconds: 10 # Lease expiration duration
+
+logging:
+  level:
+    com.netflix.discovery: INFO
+    com.netflix.eureka: INFO

@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+ axonserver:
+    image: axoniq/axonserver:4.6.11-jdk-8-dev
+    container_name: axonserver
+    ports:
+      - "8124:8124"  # Expose Axon Server port
+      - "8123:8123"  # Expose Axon Server HTTP management interface port
+    environment:
+      - AXONSERVER_CLUSTER_NAME=axon-cluster  # Set cluster name for Axon Server
+      - AXONSERVER_AXONDB_DIR=/var/lib/axonserver/data  # Persist AxonDB data
+    volumes:
+      - axonserver-data:/var/lib/axonserver/data  # Persist AxonDB data on host machine
+
+  # Eureka Server
+  eureka-server:
+    image: openjdk:11-jre-slim
+    build:
+      context: .
+      dockerfile: Dockerfile.eureka  # If you want to build from your local Dockerfile
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - eureka-network
+
+  # Config Server
+  config-server:
+    image: openjdk:11-jre-slim
+    build:
+      context: .
+      dockerfile: Dockerfile.config  # If you want to build from your local Dockerfile
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - eureka-network
+
+  # API Gateway Server
+  api-gateway:
+    image: openjdk:11-jre-slim
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway  # If you want to build from your local Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_SERVER=http://eureka-server:8761/eureka
+    depends_on:
+      - eureka-server
+    networks:
+      - eureka-network
+
+networks:
+  eureka-network:
+    driver: bridge
