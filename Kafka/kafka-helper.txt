@@ -1,0 +1,30 @@
+docker compose -f docker-compose.yml up -d
+docker up and running
+
+docker exec -it kafka /bin/sh
+
+cd /opt/kafka-2.13-2.8.1/bin
+to create topic
+
+kafka-topics.sh --create --zookeeper zookeeper:2181 --replication-factor 1 --partitions 1 --topic createinventory
+
+
+create message
+kafka-console-producer.sh --topic createinventory --bootstrap-server localhost:9092
+inv1
+inv2
+.
+.
+
+
+another terminal
+docker exec -it kafka /bin/sh
+
+cd /opt/kafka-2.13-2.8.1/bin
+kafka-console-consumer.sh --topic createinventory --from-beginning --bootstrap-server localhost:9092
+inv1
+inv2
+inv3
+inv4
+inv5
+inv6
