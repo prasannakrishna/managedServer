@@ -1,0 +1,2 @@
+http://localhost:8888/inventoryService/dev
+run this to test application properties accessible
